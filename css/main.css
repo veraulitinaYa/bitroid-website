@@ -223,7 +223,6 @@ main {
 .main__what {
   display: flex;
   flex-direction: column;
-  gap: 60px;
 }
 
 .main__what h2 {
@@ -269,6 +268,57 @@ margin-bottom: 30px;
   gap: 12px;
 }
 
+.main__cases_slider {
+  max-width: 1320px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.main__cases_slider_wrapper {
+  overflow: hidden;
+  width: 100%;
+}
+
+.main__cases_slider_card_list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  list-style: none;
+  transform: translateX(-220px);
+  transition: transform 0.3s ease;
+}
+
+.main__cases_slider_card_list.animate {
+  transition: transform 0.4s ease;
+}
+
+.main__cases_slider_card {
+  min-width: 378px;
+  height: 292px;
+  background:green;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+}
+
+.main__cases_slider_card.active {
+  background: yellow;
+  color: black;
+  min-width: 400px;
+  min-height: 330px;
+}
+
+
+.main__cases_slider_card.near {
+  background: green;
+  max-width: 378px;
+  max-height: 292px;
+}
 footer {
   display: column;
   flex-direction: row;
