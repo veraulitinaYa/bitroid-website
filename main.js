@@ -1,101 +1,132 @@
 const track = document.querySelector('.main__cases_slider_card_list');
 const next = document.querySelector('.main__cases_slider_next');
 const prev = document.querySelector('.main__cases_slider_prev');
-
 const wrapper = document.querySelector('.main__cases_slider_wrapper');
 
+let currentIndex = 1; // CHANGED: начинаем с 1 (из-за клона)
+
+// CHANGED: ширина карточки + gap
 function getCardWidth() {
   const card = document.querySelector('.main__cases_slider_card');
-  return card.offsetWidth + 20;
+  const style = window.getComputedStyle(track);
+  const gap = parseInt(style.columnGap || style.gap) || 18;
+
+  return card.offsetWidth + gap;
 }
 
+// CHANGED: делаем ширину wrapper = 3 карточки
+function setWrapperWidth() {
+  const card = document.querySelector('.main__cases_slider_card');
+  const style = window.getComputedStyle(track);
+  const gap = parseInt(style.columnGap || style.gap) || 18;
+
+  wrapper.style.width = `${card.offsetWidth * 3 + gap * 2}px`;
+}
+
+// CHANGED: создаём клоны для бесконечности
+function setupLoop() {
+  const cards = track.querySelectorAll('.main__cases_slider_card');
+
+  const first = cards[0];
+  const last = cards[cards.length - 1];
+
+  const firstClone = first.cloneNode(true);
+  const lastClone = last.cloneNode(true);
+
+  track.appendChild(firstClone);
+  track.prepend(lastClone);
+}
+
+// CHANGED: обновление позиции и активных классов
 function update() {
-  const cards = [...track.querySelectorAll('.main__cases_slider_card')];
-
-  const wrapperCenter =
-    wrapper.getBoundingClientRect().left + wrapper.offsetWidth / 2;
-
-  let closestIndex = 0;
-  let closestDistance = Infinity;
-
-  cards.forEach((card, i) => {
-    const rect = card.getBoundingClientRect();
-    const cardCenter = rect.left + rect.width / 2;
-
-    const distance = Math.abs(wrapperCenter - cardCenter);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestIndex = i;
-    }
-  });
+  const cards = track.querySelectorAll('.main__cases_slider_card');
 
   cards.forEach(card => {
     card.classList.remove('active', 'near');
   });
 
-  if (cards[closestIndex]) cards[closestIndex].classList.add('active');
-  if (cards[closestIndex - 1]) cards[closestIndex - 1].classList.add('near');
-  if (cards[closestIndex + 1]) cards[closestIndex + 1].classList.add('near');
-}
+  // центр = вторая видимая карточка
+  const activeIndex = currentIndex + 1;
 
-function setStart() {
+  if (cards[activeIndex]) {
+    cards[activeIndex].classList.add('active');
+  }
+
+  if (cards[activeIndex - 1]) {
+    cards[activeIndex - 1].classList.add('near');
+  }
+
+  if (cards[activeIndex + 1]) {
+    cards[activeIndex + 1].classList.add('near');
+  }
+
   const width = getCardWidth();
-  track.style.transform = `translateX(-${width}px)`;
+  track.style.transform = `translateX(-${currentIndex * width}px)`;
 }
 
-function onNextTransitionEnd(width) {
-  track.appendChild(track.firstElementChild);
+// CHANGED: проверка выхода в клоны
+function checkLoop() {
+  const cards = track.querySelectorAll('.main__cases_slider_card');
+  const width = getCardWidth();
 
-  track.style.transition = 'none';
-  track.style.transform = `translateX(-${width}px)`;
+  // ушли в левый клон
+  if (currentIndex === 0) {
+    currentIndex = cards.length - 2;
 
-  update();
+    track.style.transition = 'none';
+    track.style.transform = `translateX(-${currentIndex * width}px)`;
+  }
+
+  // ушли в правый клон
+  if (currentIndex === cards.length - 1) {
+    currentIndex = 1;
+
+    track.style.transition = 'none';
+    track.style.transform = `translateX(-${currentIndex * width}px)`;
+  }
 }
 
+// CHANGED: движение вперёд
 function moveNext() {
-  const width = getCardWidth();
+  currentIndex++;
 
-  track.prepend(track.lastElementChild);
-
-  track.style.transition = 'none';
-  track.style.transform = `translateX(0px)`;
-
-  requestAnimationFrame(() => {
-    track.style.transition = 'transform 0.35s ease-out';
-    track.style.transform = `translateX(-${width}px)`;
-  });
-
-  track.addEventListener('transitionend', () => {
-    requestAnimationFrame(() => update());
-  }, { once: true });
-}
-
-function onPrevTransitionEnd(width) {
+  track.style.transition = 'transform 0.35s ease';
   update();
-}
-
-function movePrev() {
-  const width = getCardWidth();
-
-  track.appendChild(track.firstElementChild);
-
-  track.style.transition = 'none';
-  track.style.transform = `translateX(-${width * 2}px)`;
-
-  requestAnimationFrame(() => {
-    track.style.transition = 'transform 0.35s ease-out';
-    track.style.transform = `translateX(-${width}px)`;
-  });
 
   track.addEventListener('transitionend', () => {
-    // CHANGED: синхронизация после layout
-    requestAnimationFrame(() => update());
+    checkLoop();
+    update();
   }, { once: true });
 }
 
+// CHANGED: движение назад
+function movePrev() {
+  currentIndex--;
+
+  track.style.transition = 'transform 0.35s ease';
+  update();
+
+  track.addEventListener('transitionend', () => {
+    checkLoop();
+    update();
+  }, { once: true });
+}
+
+// события
 next.addEventListener('click', moveNext);
 prev.addEventListener('click', movePrev);
 
-setStart();
-update();
+// CHANGED: инициализация
+function init() {
+  setupLoop();
+  setWrapperWidth();
+  update();
+}
+
+init();
+
+// CHANGED: адаптация при ресайзе
+window.addEventListener('resize', () => {
+  setWrapperWidth();
+  update();
+});
